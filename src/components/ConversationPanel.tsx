@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { RotateCcw, Trash2, Check } from 'lucide-react';
+import { RotateCcw, Trash2, Check, Send, Paperclip, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import ChatMessage from './ChatMessage';
 import { Conversation, Message } from '@/types/chat';
 
@@ -10,6 +11,7 @@ interface ConversationPanelProps {
 
 const ConversationPanel = ({ conversation }: ConversationPanelProps) => {
   const [messages, setMessages] = useState<Message[]>(conversation?.messages || []);
+  const [messageInput, setMessageInput] = useState('');
 
   const handleThumbsUp = (messageId: string) => {
     setMessages(msgs => 
@@ -29,6 +31,39 @@ const ConversationPanel = ({ conversation }: ConversationPanelProps) => {
           : msg
       )
     );
+  };
+
+  const handleSendMessage = () => {
+    if (!messageInput.trim() || !conversation) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      content: messageInput.trim(),
+      timestamp: new Date(),
+      type: 'user',
+      userId: conversation.user.id
+    };
+
+    setMessages(prev => [...prev, newMessage]);
+    setMessageInput('');
+
+    // Simulate agent response after a short delay
+    setTimeout(() => {
+      const agentResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "Thanks for your message! I'm processing your request and will get back to you shortly. 😊",
+        timestamp: new Date(),
+        type: 'agent'
+      };
+      setMessages(prev => [...prev, agentResponse]);
+    }, 1500);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   const formatDate = (date: Date) => {
@@ -141,6 +176,58 @@ const ConversationPanel = ({ conversation }: ConversationPanelProps) => {
           </div>
         )}
       </div>
+
+      {/* Chat Input Box */}
+      {conversation && (
+        <div className="border-t border-border p-4 bg-background">
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Textarea
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your message..."
+                className="min-h-[60px] max-h-32 resize-none bg-background border-border focus:border-primary"
+                rows={2}
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Paperclip className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Smile className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                disabled={!messageInput.trim()}
+                size="sm"
+                className="bg-primary hover:bg-primary/90 disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-xs text-muted-foreground">
+              Press Enter to send, Shift + Enter for new line
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {messageInput.length}/2000
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
